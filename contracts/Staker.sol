@@ -2,7 +2,6 @@
 pragma solidity ^0.8.13;
 
 import ".././contracts/IERC20.sol";
-import "../.././erc20/contracts/MAERC20.sol";
 
 /// @title Staking Platform
 /// @notice Allows to stake ERC-20 tokens and get reward for holding.
@@ -11,8 +10,8 @@ contract StakingPlatform {
     struct Stake {
         uint256 amount;
         uint256 reward;
-        uint256 unstakeDate;
-        uint256 claimDate;
+        uint256 lastStakeDate;
+        uint256 lastRewardDate;
     }
 
     /// @notice Informs that reward rate is changed
@@ -22,115 +21,160 @@ contract StakingPlatform {
     /// @notice Informs that unstake delay is changed
     event UnstakeDelayChanged(uint256 indexed unstakeDelay);
 
-    uint256 public rewardPercentage = 20;
-    uint256 public rewardDelay = 10 minutes;
-    uint256 public unstakeDelay = 20 minutes;
+    uint256 private _rewardPercentage = 20;
+    uint256 private _rewardDelay = 10 minutes;
+    uint256 private _unstakeDelay = 20 minutes;
 
+    bool private _isLocked = false;
     address private _owner;
     IERC20 private _stakingToken;
-    MAERC20 private _rewardToken;
+    IERC20 private _rewardToken;
     mapping(address => Stake) private _stakes;
 
-    modifier authorized() {
-        require(msg.sender == _owner, "Not athorized");
+    modifier onlyOwner() {
+        require(msg.sender == _owner, "No access");
+        _;
+    }
+
+    modifier whenLocked() {
+        require(_isLocked, "Should be locked");
+        _;
+    }
+
+    modifier whenUnlocked() {
+        require(!_isLocked, "Functionality is locked");
         _;
     }
 
     constructor(address stakingToken, address rewardToken) {
         _stakingToken = IERC20(stakingToken);
-        //should we create or use existing one?
-        //in case 1: we can mint
-        //in case 2: we expect we have enough tokens to send
-        _rewardToken = MAERC20(rewardToken);
+        _rewardToken = IERC20(rewardToken);
         _owner = msg.sender;
+    }
+
+    function getRewardPercentage() external view returns(uint256) {
+        return _rewardPercentage;
+    }
+    
+    function getRewardDelay() external view returns(uint256) {
+        return _rewardDelay;
+    }
+
+    function getUnstakeDelay() external view returns(uint256) {
+        return _unstakeDelay;
+    }
+
+    function getDetails(address staker) external view returns(Stake memory) {
+        require(msg.sender == staker || msg.sender == _owner, "No access");
+        return _stakes[staker];
+    }
+
+    function setLock(bool value) external onlyOwner {
+        _isLocked = value;
     }
 
     function setRewardPercentage(uint256 newRewardPercentage)
         public
-        authorized
+        onlyOwner
     {
-        rewardPercentage = newRewardPercentage;
+        _rewardPercentage = newRewardPercentage;
         emit RewardRateChanged(newRewardPercentage);
     }
 
-    function setRewardDelay(uint256 newRewardDelay) public authorized {
-        rewardDelay = newRewardDelay;
+    function setRewardDelay(uint256 newRewardDelay) public onlyOwner {
+        _rewardDelay = newRewardDelay;
         emit RewardDelayChanged(newRewardDelay);
     }
 
-    function setUnstakeDelay(uint256 newUnstakeDelay) public authorized {
-        unstakeDelay = newUnstakeDelay;
+    function setUnstakeDelay(uint256 newUnstakeDelay) public onlyOwner {
+        _unstakeDelay = newUnstakeDelay;
         emit UnstakeDelayChanged(newUnstakeDelay);
     }
 
-    function stake(uint256 amount) public {
-        Stake storage staking = _stakes[msg.sender];
-        staking.unstakeDate = block.timestamp + unstakeDelay;
-        staking.claimDate = block.timestamp + rewardDelay;
-        staking.amount += amount;
+    function setRewardToken(address newRewardToken) 
+        public 
+        onlyOwner 
+        whenLocked 
+    {
+        _rewardToken = IERC20(newRewardToken);
+    }
+
+    function setStakingToken(address newStakingToken) 
+        public 
+        onlyOwner 
+        whenLocked 
+    {
+        _stakingToken = IERC20(newStakingToken);
+    }
+
+    function stake(uint256 amount) public whenUnlocked {
+        Stake memory staking = _stakes[msg.sender];
+
+        uint256 calculatedReward = _calculateCurrentReward(
+            staking.amount, 
+            _getRewardPeriodsNumber(staking.lastRewardDate)
+        );
+
+        _stakes[msg.sender].reward = staking.reward + calculatedReward;
+        _stakes[msg.sender].lastRewardDate = block.timestamp;
+        _stakes[msg.sender].lastStakeDate = block.timestamp;
+        _stakes[msg.sender].amount += amount;
+        
         _stakingToken.transferFrom(msg.sender, address(this), amount);
     }
 
-    function unstake() public {
-        Stake storage staking = _stakes[msg.sender];
-        if (staking.amount > 0 && block.timestamp <= staking.unstakeDate)
-            revert("Nothing to unstake yet");
-        uint256 availableAmount = staking.amount;
-        staking.amount = 0;
-        _stakingToken.transfer(msg.sender, availableAmount);
-    }
-
-    function claim() public {
-        Stake storage staking = _stakes[msg.sender];
-        if (block.timestamp <= staking.claimDate)
-            revert("Nothing to claim yet");
-        (uint256 reward, uint256 rest) = _getTotalRewardUnsafely(
-            staking.amount, 
-            staking.reward
+    function unstake() public whenUnlocked {
+        Stake memory staking = _stakes[msg.sender];
+        require(
+            staking.amount > 0 &&
+            block.timestamp <= staking.lastStakeDate + _unstakeDelay,
+            "Cannot unstake yet"
         );
-        staking.reward = 0;
-        _rewardToken.transfer(msg.sender, reward);
-        staking.reward = rest;
-        //wait until more tokens appear
+        uint256 stakedAmount = staking.amount;
+        _stakes[msg.sender].amount = 0;
+
+        uint256 periods = _getRewardPeriodsNumber(staking.lastRewardDate);
+        uint256 reward = _calculateCurrentReward(stakedAmount, periods);
+        
+        _stakes[msg.sender].reward = reward;
+        _stakes[msg.sender].lastRewardDate =
+            staking.lastRewardDate + periods * _rewardDelay;
+        
+        _stakingToken.transfer(msg.sender, stakedAmount);
     }
 
-    /// @dev Unchecked calculations to get reward.
-    /// @dev if (`currentReward` + calculated) exceeds uint256.MaxValue, then
-    /// @dev it returns `currentReward` as `totalReward` and
-    /// @dev calculated reward as `rest`.
-    /// @dev Can also revert if `rewardPercantage` is a very, VERY big uint256
-    function _getTotalRewardUnsafely(
-        uint256 availableAmount, 
-        uint256 currentReward
-    )
+    function claim() public whenUnlocked {
+        Stake memory staking = _stakes[msg.sender];
+        require(
+            staking.reward == 0 &&
+            block.timestamp <= staking.lastRewardDate + _rewardDelay,
+            "Nothing to claim yet"
+        );
+        uint256 totalReward = staking.reward;
+        uint256 periods = _getRewardPeriodsNumber(staking.lastRewardDate);
+
+        _stakes[msg.sender].reward = 0;
+        _stakes[msg.sender].lastRewardDate =
+            staking.lastRewardDate + periods * _rewardDelay;
+        
+        totalReward += _calculateCurrentReward(staking.amount, periods);
+        _rewardToken.transfer(msg.sender, totalReward);
+    }
+
+    function _getRewardPeriodsNumber(uint256 lastRewardDate)
         private
         view
-        returns (uint256 totalReward, uint256 rest)
+        returns (uint256)
     {
-        totalReward = currentReward;
-        rest = 0;
-        //to avoid situation when we get an error and can't finish claim func
-        unchecked {
-            uint256 part1 = availableAmount * rewardPercentage;
-            //make sure there is no overflow
-            if (part1 >= availableAmount) {
-                part1 = part1 / 100;
-            } else {//if (availableAmount >= 100)
-                part1 = availableAmount / 100;
-                uint256 tmp = part1 * rewardPercentage;
-                //make sure there is no overflow again
-                if (tmp >= part1)
-                    part1 = tmp;
-                else
-                    revert("Too big reward rate");
-            }
-            //make sure there is no overflow one more time
-            uint256 part2 = totalReward + part1;
-            if (part2 >= totalReward && part2 >= part1)
-                totalReward = part2;
-            else
-                rest = part2;
-        }
-        return (totalReward, rest);
+        if (block.timestamp <= lastRewardDate) 
+            return 0;
+        return (block.timestamp - lastRewardDate) / _rewardDelay;
+    }
+
+    function _calculateCurrentReward(
+        uint256 stakedAmount,
+        uint256 numberOfPeriods
+    ) private view returns (uint256) {
+        return numberOfPeriods * (stakedAmount * _rewardPercentage / 100);
     }
 }

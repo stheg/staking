@@ -26,41 +26,76 @@ import type {
   OnEvent,
 } from "../common";
 
+export declare namespace StakingPlatform {
+  export type StakeStruct = {
+    amount: BigNumberish;
+    reward: BigNumberish;
+    lastStakeDate: BigNumberish;
+    lastRewardDate: BigNumberish;
+  };
+
+  export type StakeStructOutput = [
+    BigNumber,
+    BigNumber,
+    BigNumber,
+    BigNumber
+  ] & {
+    amount: BigNumber;
+    reward: BigNumber;
+    lastStakeDate: BigNumber;
+    lastRewardDate: BigNumber;
+  };
+}
+
 export interface StakingPlatformInterface extends utils.Interface {
   functions: {
     "claim()": FunctionFragment;
-    "rewardDelay()": FunctionFragment;
-    "rewardPercentage()": FunctionFragment;
+    "getDetails(address)": FunctionFragment;
+    "getRewardDelay()": FunctionFragment;
+    "getRewardPercentage()": FunctionFragment;
+    "getUnstakeDelay()": FunctionFragment;
+    "setLock(bool)": FunctionFragment;
     "setRewardDelay(uint256)": FunctionFragment;
     "setRewardPercentage(uint256)": FunctionFragment;
+    "setRewardToken(address)": FunctionFragment;
+    "setStakingToken(address)": FunctionFragment;
     "setUnstakeDelay(uint256)": FunctionFragment;
     "stake(uint256)": FunctionFragment;
     "unstake()": FunctionFragment;
-    "unstakeDelay()": FunctionFragment;
   };
 
   getFunction(
     nameOrSignatureOrTopic:
       | "claim"
-      | "rewardDelay"
-      | "rewardPercentage"
+      | "getDetails"
+      | "getRewardDelay"
+      | "getRewardPercentage"
+      | "getUnstakeDelay"
+      | "setLock"
       | "setRewardDelay"
       | "setRewardPercentage"
+      | "setRewardToken"
+      | "setStakingToken"
       | "setUnstakeDelay"
       | "stake"
       | "unstake"
-      | "unstakeDelay"
   ): FunctionFragment;
 
   encodeFunctionData(functionFragment: "claim", values?: undefined): string;
+  encodeFunctionData(functionFragment: "getDetails", values: [string]): string;
   encodeFunctionData(
-    functionFragment: "rewardDelay",
+    functionFragment: "getRewardDelay",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "rewardPercentage",
+    functionFragment: "getRewardPercentage",
     values?: undefined
   ): string;
+  encodeFunctionData(
+    functionFragment: "getUnstakeDelay",
+    values?: undefined
+  ): string;
+  encodeFunctionData(functionFragment: "setLock", values: [boolean]): string;
   encodeFunctionData(
     functionFragment: "setRewardDelay",
     values: [BigNumberish]
@@ -68,6 +103,14 @@ export interface StakingPlatformInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "setRewardPercentage",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setRewardToken",
+    values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setStakingToken",
+    values: [string]
   ): string;
   encodeFunctionData(
     functionFragment: "setUnstakeDelay",
@@ -75,26 +118,36 @@ export interface StakingPlatformInterface extends utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "stake", values: [BigNumberish]): string;
   encodeFunctionData(functionFragment: "unstake", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "unstakeDelay",
-    values?: undefined
-  ): string;
 
   decodeFunctionResult(functionFragment: "claim", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "getDetails", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "rewardDelay",
+    functionFragment: "getRewardDelay",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "rewardPercentage",
+    functionFragment: "getRewardPercentage",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "getUnstakeDelay",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "setLock", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "setRewardDelay",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "setRewardPercentage",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setRewardToken",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setStakingToken",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -103,10 +156,6 @@ export interface StakingPlatformInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "stake", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "unstake", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "unstakeDelay",
-    data: BytesLike
-  ): Result;
 
   events: {
     "RewardDelayChanged(uint256)": EventFragment;
@@ -183,9 +232,21 @@ export interface StakingPlatform extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    rewardDelay(overrides?: CallOverrides): Promise<[BigNumber]>;
+    getDetails(
+      staker: string,
+      overrides?: CallOverrides
+    ): Promise<[StakingPlatform.StakeStructOutput]>;
 
-    rewardPercentage(overrides?: CallOverrides): Promise<[BigNumber]>;
+    getRewardDelay(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    getRewardPercentage(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    getUnstakeDelay(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    setLock(
+      value: boolean,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
 
     setRewardDelay(
       newRewardDelay: BigNumberish,
@@ -194,6 +255,16 @@ export interface StakingPlatform extends BaseContract {
 
     setRewardPercentage(
       newRewardPercentage: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setRewardToken(
+      newRewardToken: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setStakingToken(
+      newStakingToken: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -210,17 +281,27 @@ export interface StakingPlatform extends BaseContract {
     unstake(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
-
-    unstakeDelay(overrides?: CallOverrides): Promise<[BigNumber]>;
   };
 
   claim(
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  rewardDelay(overrides?: CallOverrides): Promise<BigNumber>;
+  getDetails(
+    staker: string,
+    overrides?: CallOverrides
+  ): Promise<StakingPlatform.StakeStructOutput>;
 
-  rewardPercentage(overrides?: CallOverrides): Promise<BigNumber>;
+  getRewardDelay(overrides?: CallOverrides): Promise<BigNumber>;
+
+  getRewardPercentage(overrides?: CallOverrides): Promise<BigNumber>;
+
+  getUnstakeDelay(overrides?: CallOverrides): Promise<BigNumber>;
+
+  setLock(
+    value: boolean,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
 
   setRewardDelay(
     newRewardDelay: BigNumberish,
@@ -229,6 +310,16 @@ export interface StakingPlatform extends BaseContract {
 
   setRewardPercentage(
     newRewardPercentage: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setRewardToken(
+    newRewardToken: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setStakingToken(
+    newStakingToken: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -246,14 +337,21 @@ export interface StakingPlatform extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  unstakeDelay(overrides?: CallOverrides): Promise<BigNumber>;
-
   callStatic: {
     claim(overrides?: CallOverrides): Promise<void>;
 
-    rewardDelay(overrides?: CallOverrides): Promise<BigNumber>;
+    getDetails(
+      staker: string,
+      overrides?: CallOverrides
+    ): Promise<StakingPlatform.StakeStructOutput>;
 
-    rewardPercentage(overrides?: CallOverrides): Promise<BigNumber>;
+    getRewardDelay(overrides?: CallOverrides): Promise<BigNumber>;
+
+    getRewardPercentage(overrides?: CallOverrides): Promise<BigNumber>;
+
+    getUnstakeDelay(overrides?: CallOverrides): Promise<BigNumber>;
+
+    setLock(value: boolean, overrides?: CallOverrides): Promise<void>;
 
     setRewardDelay(
       newRewardDelay: BigNumberish,
@@ -265,6 +363,16 @@ export interface StakingPlatform extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    setRewardToken(
+      newRewardToken: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setStakingToken(
+      newStakingToken: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     setUnstakeDelay(
       newUnstakeDelay: BigNumberish,
       overrides?: CallOverrides
@@ -273,8 +381,6 @@ export interface StakingPlatform extends BaseContract {
     stake(amount: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
     unstake(overrides?: CallOverrides): Promise<void>;
-
-    unstakeDelay(overrides?: CallOverrides): Promise<BigNumber>;
   };
 
   filters: {
@@ -305,9 +411,18 @@ export interface StakingPlatform extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    rewardDelay(overrides?: CallOverrides): Promise<BigNumber>;
+    getDetails(staker: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    rewardPercentage(overrides?: CallOverrides): Promise<BigNumber>;
+    getRewardDelay(overrides?: CallOverrides): Promise<BigNumber>;
+
+    getRewardPercentage(overrides?: CallOverrides): Promise<BigNumber>;
+
+    getUnstakeDelay(overrides?: CallOverrides): Promise<BigNumber>;
+
+    setLock(
+      value: boolean,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
 
     setRewardDelay(
       newRewardDelay: BigNumberish,
@@ -316,6 +431,16 @@ export interface StakingPlatform extends BaseContract {
 
     setRewardPercentage(
       newRewardPercentage: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setRewardToken(
+      newRewardToken: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setStakingToken(
+      newStakingToken: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -332,8 +457,6 @@ export interface StakingPlatform extends BaseContract {
     unstake(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
-
-    unstakeDelay(overrides?: CallOverrides): Promise<BigNumber>;
   };
 
   populateTransaction: {
@@ -341,9 +464,23 @@ export interface StakingPlatform extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    rewardDelay(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+    getDetails(
+      staker: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
 
-    rewardPercentage(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+    getRewardDelay(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    getRewardPercentage(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    getUnstakeDelay(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    setLock(
+      value: boolean,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
 
     setRewardDelay(
       newRewardDelay: BigNumberish,
@@ -352,6 +489,16 @@ export interface StakingPlatform extends BaseContract {
 
     setRewardPercentage(
       newRewardPercentage: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setRewardToken(
+      newRewardToken: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setStakingToken(
+      newStakingToken: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -368,7 +515,5 @@ export interface StakingPlatform extends BaseContract {
     unstake(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
-
-    unstakeDelay(overrides?: CallOverrides): Promise<PopulatedTransaction>;
   };
 }

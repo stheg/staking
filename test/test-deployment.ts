@@ -1,17 +1,34 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "hardhat";
-import { StakingPlatform } from "../typechain-types";
+import { IERC20, StakingPlatform } from "../typechain-types";
 
-export default testDeployment;
-
-async function testDeployment()
-    : Promise<[SignerWithAddress[], SignerWithAddress, StakingPlatform]> {
-    const accounts = await ethers.getSigners();
-    const owner = accounts[0];
-
-    const contractFactory = await ethers.getContractFactory("StakingPlatform", owner);
-    const contract = await contractFactory.deploy() as StakingPlatform;
+export async function testDeployment(
+    tokenToStake:IERC20, 
+    rewardToken:IERC20, 
+    owner:SignerWithAddress
+):Promise<StakingPlatform> {
+    const contractFactory = 
+        await ethers.getContractFactory("StakingPlatform", owner);
+    const contract = await contractFactory.deploy(
+        tokenToStake.address, 
+        rewardToken.address
+    ) as StakingPlatform;
+    
     await contract.deployed();
 
-    return [accounts, owner, contract];
+    return contract;
+}
+
+export async function getTokenContract(address:string, owner:SignerWithAddress, abi:string)
+    :Promise<IERC20> 
+{
+    //const contractFactory = await ethers.getContractFactory(, owner);
+    const contract = await ethers.getContractAt(
+        abi,
+        address, 
+        //contractFactory.interface, 
+        owner
+    ) as IERC20;
+
+    return contract;
 }

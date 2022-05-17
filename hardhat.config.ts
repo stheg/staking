@@ -22,7 +22,11 @@ export default {
       accounts: [process.env.ACC_1, process.env.ACC_2, process.env.ACC_3]
     },
     hardhat: {
-      chainId: 1337
+      chainId: 1337,
+      forking: {
+        url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALC_KEY}`,
+        blockNumber: 10691345,
+      }
     }
   },
   etherscan: {
