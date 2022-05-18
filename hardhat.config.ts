@@ -25,7 +25,7 @@ export default {
       chainId: 1337,
       forking: {
         url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALC_KEY}`,
-        blockNumber: 10691345,
+        blockNumber: 10691345
       }
     }
   },

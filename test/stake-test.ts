@@ -1,8 +1,10 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
+import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
+import { provideLiquidityForTests } from "../scripts/provide-liquidity";
 import { IERC20, StakingPlatform } from "../typechain-types";
-import { testDeployment, getTokenContract } from "./test-deployment";
+import { testDeployment } from "./test-deployment";
 
 describe("stake functions", () => {
     let accounts: SignerWithAddress[];
@@ -12,6 +14,7 @@ describe("stake functions", () => {
     let contract: StakingPlatform;
     let stakingToken: IERC20;
     let rewardToken: IERC20;
+    let availableLpTokenBalance: BigNumber;
 
     beforeEach(async () => {
         accounts = await ethers.getSigners();
@@ -19,30 +22,25 @@ describe("stake functions", () => {
         owner = accounts[1];
         staker = accounts[2];
 
-        //TODO: provide liquidity and get lpToken
+        [stakingToken, rewardToken] = 
+            await provideLiquidityForTests(staker, rewardTokenOwner);
 
-        //lpToken.address
-        const stakingTokenAddr = "0x0d1e5112B7Bf0595837f6e19A8233e8b918Ef3aA";
-        const rewardTokenAddr = "0x1A13F7fB13BCa03FF646702C6Af9D699729A0C1d";
-        stakingToken = await getTokenContract(stakingTokenAddr, staker, uniV2);
-        rewardToken = await getTokenContract(rewardTokenAddr, staker, maerc20); 
-
+        availableLpTokenBalance = await stakingToken.balanceOf(staker.address);
+        
         contract = await testDeployment(stakingToken, rewardToken, owner);
         contract = contract.connect(staker);
+
+        await rewardToken.connect(rewardTokenOwner)
+            .mint(contract.address, 50000);
     });
 
     it("should work", async () => {
-        // const amount = await stakingToken.balanceOf(staker.address);
-        // console.log(amount);
-        // await stakingToken.approve(contract.address, amount);
+        await stakingToken.approve(contract.address, availableLpTokenBalance);
 
-        // //const tx = 
-        // await contract.stake(amount);
+        await contract.stake(availableLpTokenBalance);
 
-        // //await expect(tx)
-
-        // const [actualAmount,,,] = 
-        //     await contract.getDetails(staker.address);
-        // expect(actualAmount).eq(amount);
+        const [stakedAmount,,,] = 
+            await contract.getDetails(staker.address);
+        expect(stakedAmount).eq(availableLpTokenBalance);
     });
 });
