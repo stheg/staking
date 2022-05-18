@@ -2,6 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { ethers, network } from "hardhat";
+import { toDate } from "../scripts/misc";
 import { provideLiquidityForTests } from "../scripts/provide-liquidity";
 import { IERC20, StakingPlatform } from "../typechain-types";
 import { testDeployment } from "./test-deployment";
@@ -35,30 +36,30 @@ describe("stake", () => {
     });
 
     it("should increase staked amount", async () => {
-        const halfOfAmount = Math.floor(availableLpTokenBalance.toNumber() / 2);
-        await stakingToken.approve(contract.address, 2 * halfOfAmount);
+        const half = Math.floor(availableLpTokenBalance.toNumber() / 2);
+        await stakingToken.approve(contract.address, 2 * half);
 
         //stake #1
-        await contract.stake(halfOfAmount);
+        await contract.stake(half);
         let [stakedAmount, , ,] = await contract.getDetails(staker.address);
-        expect(stakedAmount).eq(halfOfAmount);
+        expect(stakedAmount).eq(half);
 
         //stake #2
-        await contract.stake(halfOfAmount);
+        await contract.stake(half);
         [stakedAmount, , ,] = await contract.getDetails(staker.address);
-        expect(stakedAmount).eq(2 * halfOfAmount);
+        expect(stakedAmount).eq(2 * half);
     });
 
     it("should change dates", async () => {
-        const halfOfAmount = Math.floor(availableLpTokenBalance.toNumber() / 2);
-        await stakingToken.approve(contract.address, 2 * halfOfAmount);
+        const half = Math.floor(availableLpTokenBalance.toNumber() / 2);
+        await stakingToken.approve(contract.address, 2 * half);
 
         //stake #1
-        await contract.stake(halfOfAmount);
+        await contract.stake(half);
         let [, , lastStakeDate1, lastRewardDate1] = 
             await contract.getDetails(staker.address);
         //stake #2
-        await contract.stake(halfOfAmount);
+        await contract.stake(half);
         let [, , lastStakeDate2, lastRewardDate2] =
             await contract.getDetails(staker.address);
 
@@ -82,7 +83,7 @@ describe("stake", () => {
         let expectedReward = 
             Math.floor(oneThird * rewardPercentage.toNumber() / 100);
 
-        //stake #2
+        //stake #2 should calculate reward
         await contract.stake(oneThird);
         let [, actualReward, ,] = await contract.getDetails(staker.address);
         expect(actualReward.toNumber()).eq(expectedReward);
@@ -95,7 +96,7 @@ describe("stake", () => {
             [rewardDelay.toNumber()]
         );
 
-        //stake #3
+        //stake #3 should calculate again and increase prev amount
         await contract.stake(oneThird);
         [, actualReward, ,] = await contract.getDetails(staker.address);
         expect(actualReward.toNumber()).eq(expectedReward);
@@ -111,7 +112,7 @@ describe("stake", () => {
         const rewardDelay = await contract.getRewardDelay();
         await network.provider.send(
             "evm_increaseTime",
-            [rewardDelay.toNumber() - 60*1000]//-60 seconds
+            [rewardDelay.toNumber() - 60]//-60 seconds
         );
 
         const expectedReward = 0;
@@ -120,6 +121,4 @@ describe("stake", () => {
         let [, actualReward, ,] = await contract.getDetails(staker.address);
         expect(actualReward.toNumber()).eq(expectedReward);
     });
-
-    function toDate(i: BigNumber) { return new Date(i.toNumber() * 1000); }
 });

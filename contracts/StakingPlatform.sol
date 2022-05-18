@@ -127,7 +127,7 @@ contract StakingPlatform {
         Stake memory staking = _stakes[msg.sender];
         require(
             staking.amount > 0 &&
-            block.timestamp <= staking.lastStakeDate + _unstakeDelay,
+            block.timestamp > staking.lastStakeDate + _unstakeDelay,
             "Cannot unstake yet"
         );
         uint256 stakedAmount = staking.amount;
@@ -146,8 +146,8 @@ contract StakingPlatform {
     function claim() public whenUnlocked {
         Stake memory staking = _stakes[msg.sender];
         require(
-            staking.reward == 0 &&
-            block.timestamp <= staking.lastRewardDate + _rewardDelay,
+            staking.reward > 0 &&
+            block.timestamp > staking.lastRewardDate + _rewardDelay,
             "Nothing to claim yet"
         );
         uint256 totalReward = staking.reward;
