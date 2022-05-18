@@ -145,11 +145,10 @@ contract StakingPlatform {
 
     function claim() public whenUnlocked {
         Stake memory staking = _stakes[msg.sender];
-        require(
-            staking.reward > 0 &&
-            block.timestamp > staking.lastRewardDate + _rewardDelay,
-            "Nothing to claim yet"
-        );
+        bool canBeClaimed = staking.lastRewardDate > 0 &&
+            block.timestamp > staking.lastRewardDate + _rewardDelay;
+        require(canBeClaimed || staking.reward > 0, "Nothing to claim yet");
+        
         uint256 totalReward = staking.reward;
         uint256 periods = _getRewardPeriodsNumber(staking.lastRewardDate);
 

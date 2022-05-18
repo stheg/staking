@@ -2,7 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { ethers, network } from "hardhat";
-import { toDate } from "../scripts/misc";
+import { delay, toDate } from "../scripts/misc";
 import { provideLiquidityForTests } from "../scripts/provide-liquidity";
 import { IERC20, StakingPlatform } from "../typechain-types";
 import { testDeployment } from "./test-deployment";
@@ -44,7 +44,7 @@ describe("stake", () => {
         let [stakedAmount, , ,] = await contract.getDetails(staker.address);
         expect(stakedAmount).eq(half);
 
-        //stake #2
+        //stake #2 should increase amount
         await contract.stake(half);
         [stakedAmount, , ,] = await contract.getDetails(staker.address);
         expect(stakedAmount).eq(2 * half);
@@ -58,7 +58,7 @@ describe("stake", () => {
         await contract.stake(half);
         let [, , lastStakeDate1, lastRewardDate1] = 
             await contract.getDetails(staker.address);
-        //stake #2
+        //stake #2 should set new dates
         await contract.stake(half);
         let [, , lastStakeDate2, lastRewardDate2] =
             await contract.getDetails(staker.address);
@@ -76,10 +76,7 @@ describe("stake", () => {
         
         const rewardPercentage = await contract.getRewardPercentage();
         const rewardDelay = await contract.getRewardDelay();
-        await network.provider.send(
-            "evm_increaseTime", 
-            [rewardDelay.toNumber()]
-        );
+        await delay(rewardDelay);
         let expectedReward = 
             Math.floor(oneThird * rewardPercentage.toNumber() / 100);
 
@@ -91,10 +88,7 @@ describe("stake", () => {
         expectedReward +=
             Math.floor(2*oneThird * rewardPercentage.toNumber() / 100);
 
-        await network.provider.send(
-            "evm_increaseTime",
-            [rewardDelay.toNumber()]
-        );
+        await delay(rewardDelay);
 
         //stake #3 should calculate again and increase prev amount
         await contract.stake(oneThird);
@@ -110,13 +104,10 @@ describe("stake", () => {
         await contract.stake(oneThird);
 
         const rewardDelay = await contract.getRewardDelay();
-        await network.provider.send(
-            "evm_increaseTime",
-            [rewardDelay.toNumber() - 60]//-60 seconds
-        );
+        await delay(rewardDelay, -60);//-60 seconds
 
         const expectedReward = 0;
-        //stake #2
+        //stake #2 shouln't calculate reward because it is too early
         await contract.stake(oneThird);
         let [, actualReward, ,] = await contract.getDetails(staker.address);
         expect(actualReward.toNumber()).eq(expectedReward);

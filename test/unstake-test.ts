@@ -2,7 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { ethers, network } from "hardhat";
-import { toDate } from "../scripts/misc";
+import { delay, toDate } from "../scripts/misc";
 import { provideLiquidityForTests } from "../scripts/provide-liquidity";
 import { IERC20, StakingPlatform } from "../typechain-types";
 import { testDeployment } from "./test-deployment";
@@ -41,15 +41,13 @@ describe("unstake", () => {
     });
 
     it("should revert if too early", async () => {
-        //preparing
+        //environment
         const halfOfAmount = Math.floor(availableLpTokenBalance.toNumber() / 2);
         await stakingToken.approve(contract.address, 2 * halfOfAmount);
         await contract.stake(halfOfAmount);
+        //current test settings
         const unstakeDelay = await contract.getUnstakeDelay();
-        await network.provider.send(
-            "evm_increaseTime",
-            [unstakeDelay.toNumber() - 60]//-60 seconds
-        );
+        await delay(unstakeDelay, -60);//-60 seconds
         //action
         const tx = contract.unstake();
         //checks
@@ -57,15 +55,13 @@ describe("unstake", () => {
     });
 
     it("should reset staked amount to 0", async () => {
-        //preparing
+        //environment
         const halfOfAmount = Math.floor(availableLpTokenBalance.toNumber() / 2);
         await stakingToken.approve(contract.address, 2 * halfOfAmount);
         await contract.stake(halfOfAmount);
+        //current test settings
         const unstakeDelay = await contract.getUnstakeDelay();
-        await network.provider.send(
-            "evm_increaseTime",
-            [unstakeDelay.toNumber() + 60]//+60 seconds
-        );
+        await delay(unstakeDelay, 60);//+60 seconds
         //action
         await contract.unstake();
         //checks
@@ -74,17 +70,15 @@ describe("unstake", () => {
     });
 
     it("should calculate reward", async () => {
-        //preparing
+        //environment
         const oneThird = Math.floor(availableLpTokenBalance.toNumber() / 3);
         await stakingToken.approve(contract.address, 3 * oneThird);
         await contract.stake(oneThird);
+        //current test settings
         const rewardPercentage = await contract.getRewardPercentage();
         const rewardDelay = await contract.getRewardDelay();
         const unstakeDelay = await contract.getUnstakeDelay();
-        await network.provider.send(
-            "evm_increaseTime",
-            [unstakeDelay.toNumber() + 60]//+60 seconds
-        );
+        await delay(unstakeDelay, 60);//+60 seconds
         const periods = Math.floor(
             unstakeDelay.toNumber() / rewardDelay.toNumber()
         );
@@ -98,21 +92,18 @@ describe("unstake", () => {
     });
 
     it("shouldn't calculate reward if too early", async () => {
-        //preparing
+        //current test settings
         const rewardDelay = await contract.getRewardDelay();
         const moreThanUnstakeDelayLessThanRewardDelay = 
-            rewardDelay.toNumber() - 60;//-60 seconds
-        await contract.connect(owner).setUnstakeDelay(
-            moreThanUnstakeDelayLessThanRewardDelay - 60//-60 seconds
-        );
+            rewardDelay.sub(60);//-60 seconds
+        const newUnstakeDelay = 
+            moreThanUnstakeDelayLessThanRewardDelay.toNumber() - 60;
+        await contract.connect(owner).setUnstakeDelay(newUnstakeDelay);
         const oneThird = Math.floor(availableLpTokenBalance.toNumber() / 3);
         await stakingToken.approve(contract.address, 3 * oneThird);
         await contract.stake(oneThird);
 
-        await network.provider.send(
-            "evm_increaseTime",
-            [moreThanUnstakeDelayLessThanRewardDelay]
-        );
+        await delay(moreThanUnstakeDelayLessThanRewardDelay);
         //action
         let expectedReward = 0;
         await contract.unstake();
@@ -122,18 +113,16 @@ describe("unstake", () => {
     });
 
     it("should change last reward date after reward calculation", async () => {
-        //preparing
+        //environment
         const oneThird = Math.floor(availableLpTokenBalance.toNumber() / 3);
         await stakingToken.approve(contract.address, 3 * oneThird);
         await contract.stake(oneThird);
+        //current test settings
         let [, , , lastRewardDate1] =
             await contract.getDetails(staker.address);
+        //expect default settings where unstakeDelay > rewardDelay
         const unstakeDelay = await contract.getUnstakeDelay();
-        const rewardDelay = await contract.getRewardDelay();
-        await network.provider.send(
-            "evm_increaseTime",
-            [Math.max(rewardDelay.toNumber(), unstakeDelay.toNumber()) + 60]
-        );
+        await delay(unstakeDelay, 60);//+60 seconds
         //action
         await contract.unstake();
         //checks
