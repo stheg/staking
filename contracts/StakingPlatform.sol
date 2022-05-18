@@ -5,7 +5,8 @@ import ".././contracts/IERC20.sol";
 
 /// @title Staking Platform
 /// @notice Allows to stake ERC-20 tokens and get reward for holding.
-/// @notice Has determined reward rate, claim delay and unstake delay
+/// @notice Has customizable reward rate, reward delay and unstake delay
+/// @notice Can be locked to change staking and reward tokens.
 contract StakingPlatform {
     struct Stake {
         uint256 amount;
@@ -52,27 +53,47 @@ contract StakingPlatform {
         _owner = msg.sender;
     }
 
+    /// @notice Returns current Reward Percentage
     function getRewardPercentage() external view returns(uint256) {
         return _rewardPercentage;
     }
     
+    /// @notice Returns current Reward Delay.
+    /// @notice Shows how long Claim function cannot be called since last Stake.
+    /// @notice Shows how long a period which will be rewarded afterthat.
     function getRewardDelay() external view returns(uint256) {
         return _rewardDelay;
     }
 
+    /// @notice Returns current Unstake Delay.
+    /// @notice Shows how long Unstake function cannot be called since last Stake
     function getUnstakeDelay() external view returns(uint256) {
         return _unstakeDelay;
     }
 
+    /// @notice Returns current state for the specifed `staker`
     function getDetails(address staker) external view returns(Stake memory) {
         require(msg.sender == staker || msg.sender == _owner, "No access");
         return _stakes[staker];
     }
 
+    /// @notice Returns address of the current staking token
+    function getStakingToken() external view returns(address) {
+        return address(_stakingToken);
+    }
+
+    /// @notice Returns address of the current reward token
+    function getRewardToken() external view returns(address) {
+        return address(_rewardToken);
+    }
+
+    /// @notice Allows to lock or unlock the platform
     function setLock(bool value) external onlyOwner {
         _isLocked = value;
     }
 
+    /// @notice Allows to change Reward Percentage.
+    /// @notice Emits `RewardRateChanged` event
     function setRewardPercentage(uint256 newRewardPercentage)
         public
         onlyOwner
@@ -81,16 +102,21 @@ contract StakingPlatform {
         emit RewardRateChanged(newRewardPercentage);
     }
 
+    /// @notice Allows to change Reward Delay.
+    /// @notice Emits `RewardDelayChanged` event
     function setRewardDelay(uint256 newRewardDelay) public onlyOwner {
         _rewardDelay = newRewardDelay;
         emit RewardDelayChanged(newRewardDelay);
     }
 
+    /// @notice Allows to change Unstake Delay.
+    /// @notice Emits `UnstakeDelayChanged` event
     function setUnstakeDelay(uint256 newUnstakeDelay) public onlyOwner {
         _unstakeDelay = newUnstakeDelay;
         emit UnstakeDelayChanged(newUnstakeDelay);
     }
 
+    /// @notice Allows to change the reward token, if the platform is locked
     function setRewardToken(address newRewardToken) 
         public 
         onlyOwner 
@@ -99,6 +125,7 @@ contract StakingPlatform {
         _rewardToken = IERC20(newRewardToken);
     }
 
+    /// @notice Allows to change the staking token, if the platform is locked
     function setStakingToken(address newStakingToken) 
         public 
         onlyOwner 
@@ -107,6 +134,10 @@ contract StakingPlatform {
         _stakingToken = IERC20(newStakingToken);
     }
 
+    /// @notice Calculates reward based on currently staked amount, if possible
+    /// @notice Updates the state: dates & amounts
+    /// @notice Transfers from the sender the specified amount of tokens, 
+    /// which should be already approved by the sender
     function stake(uint256 amount) public whenUnlocked {
         Stake memory staking = _stakes[msg.sender];
 
@@ -123,6 +154,9 @@ contract StakingPlatform {
         _stakingToken.transferFrom(msg.sender, address(this), amount);
     }
 
+    /// @notice Checks if it is possible to unstake.
+    /// @notice Calculates reward based on currently staked amount.
+    /// @notice Resets staked amount and transfers it back to the owner 
     function unstake() public whenUnlocked {
         Stake memory staking = _stakes[msg.sender];
         require(
@@ -143,6 +177,8 @@ contract StakingPlatform {
         _stakingToken.transfer(msg.sender, stakedAmount);
     }
 
+    /// @notice Checks if it is possible to calculate a reward.
+    /// @notice Calculates and transfer calculated amount of reward tokens
     function claim() public whenUnlocked {
         Stake memory staking = _stakes[msg.sender];
         bool canBeClaimed = staking.lastRewardDate > 0 &&
@@ -160,16 +196,16 @@ contract StakingPlatform {
         _rewardToken.transfer(msg.sender, totalReward);
     }
 
+    /// @dev Gives number of period which should be rewarded since given date
     function _getRewardPeriodsNumber(uint256 lastRewardDate)
         private
         view
         returns (uint256)
     {
-        if (block.timestamp <= lastRewardDate) 
-            return 0;
         return (block.timestamp - lastRewardDate) / _rewardDelay;
     }
 
+    /// @dev Gives reward for current reward rate and given amount and periods
     function _calculateCurrentReward(
         uint256 stakedAmount,
         uint256 numberOfPeriods

@@ -1,7 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
-import { ethers, network } from "hardhat";
+import { ethers } from "hardhat";
 import { delay, toDate } from "../scripts/misc";
 import { provideLiquidityForTests } from "../scripts/provide-liquidity";
 import { IERC20, StakingPlatform } from "../typechain-types";
