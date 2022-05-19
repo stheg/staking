@@ -66,7 +66,8 @@ describe("claim", () => {
         //action
         await contract.claim();
         //checks
-        const [amountAfter, reward, ,] = await contract.getDetails(staker.address);
+        const [amountAfter, reward, ,] = 
+            await contract.getDetails(staker.address);
         expect(amountAfter).eq(amountBefore);
         expect(reward.toNumber()).eq(0);
     });

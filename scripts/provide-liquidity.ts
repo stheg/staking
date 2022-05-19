@@ -2,7 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 import { deployMAERC20 } from "../test/test-deployment";
-import { IERC20, IRouter, IUniswapV2Factory } from "../typechain-types";
+import { IERC20, IUniswapV2Router, IUniswapV2Factory } from "../typechain-types";
 
 const uniswapRouter = require("../node_modules/@uniswap/v2-periphery/build/IUniswapV2Router02.json");
 const uniswapFactory = require("../node_modules/@uniswap/v2-core/build/IUniswapV2Factory.json");
@@ -21,12 +21,12 @@ export async function getFactory(
 export async function getRouter(
     signer:SignerWithAddress, 
     atAddress:string | undefined = undefined
-):Promise<IRouter> {
+):Promise<IUniswapV2Router> {
     return await ethers.getContractAt(
         uniswapRouter.abi,
         atAddress ?? "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
         signer
-    ) as IRouter;
+    ) as IUniswapV2Router;
 }
 
 export async function provideLiquidityForTests(
@@ -61,7 +61,7 @@ export async function provideLiquidity(
     tokenB:IERC20,
     amountB:BigNumber,
     uniFactory: IUniswapV2Factory,
-    uniRouter: IRouter
+    uniRouter: IUniswapV2Router
 ):Promise<IERC20> {
     const revertDate = new Date();//today
     const deadline = Math.floor(revertDate.getTime() / 1000) + 30;//+30 sec

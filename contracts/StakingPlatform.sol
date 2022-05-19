@@ -16,16 +16,16 @@ contract StakingPlatform {
     }
 
     /// @notice Informs that reward rate is changed
-    event RewardRateChanged(uint256 indexed rewardPercentage);
+    event RewardRateChanged(uint8 indexed rewardPercentage);
     /// @notice Informs that reward delay is changed
-    event RewardDelayChanged(uint256 indexed rewardDelay);
+    event RewardDelayChanged(uint32 indexed rewardDelay);
     /// @notice Informs that unstake delay is changed
-    event UnstakeDelayChanged(uint256 indexed unstakeDelay);
+    event UnstakeDelayChanged(uint32 indexed unstakeDelay);
 
-    uint256 private _rewardPercentage = 20;
-    uint256 private _rewardDelay = 10 minutes;
-    uint256 private _unstakeDelay = 20 minutes;
-
+    //uint32 covers 136 years, it's more than enough for delays
+    uint32 private _rewardDelay = 10 minutes;
+    uint32 private _unstakeDelay = 20 minutes;
+    uint8 private _rewardPercentage = 20;
     bool private _isLocked = false;
     address private _owner;
     IERC20 private _stakingToken;
@@ -59,14 +59,14 @@ contract StakingPlatform {
     }
     
     /// @notice Returns current Reward Delay.
-    /// @notice Shows how long Claim function cannot be called since last Stake.
-    /// @notice Shows how long a period which will be rewarded afterthat.
+    /// @notice Shows how long Claim cannot be called since last Stake.
+    /// @notice Shows how long a period which will be rewarded afterthat
     function getRewardDelay() external view returns(uint256) {
         return _rewardDelay;
     }
 
     /// @notice Returns current Unstake Delay.
-    /// @notice Shows how long Unstake function cannot be called since last Stake
+    /// @notice Shows how long Unstake cannot be called since last Stake
     function getUnstakeDelay() external view returns(uint256) {
         return _unstakeDelay;
     }
@@ -94,7 +94,7 @@ contract StakingPlatform {
 
     /// @notice Allows to change Reward Percentage.
     /// @notice Emits `RewardRateChanged` event
-    function setRewardPercentage(uint256 newRewardPercentage)
+    function setRewardPercentage(uint8 newRewardPercentage)
         public
         onlyOwner
     {
@@ -104,14 +104,14 @@ contract StakingPlatform {
 
     /// @notice Allows to change Reward Delay.
     /// @notice Emits `RewardDelayChanged` event
-    function setRewardDelay(uint256 newRewardDelay) public onlyOwner {
+    function setRewardDelay(uint32 newRewardDelay) public onlyOwner {
         _rewardDelay = newRewardDelay;
         emit RewardDelayChanged(newRewardDelay);
     }
 
     /// @notice Allows to change Unstake Delay.
     /// @notice Emits `UnstakeDelayChanged` event
-    function setUnstakeDelay(uint256 newUnstakeDelay) public onlyOwner {
+    function setUnstakeDelay(uint32 newUnstakeDelay) public onlyOwner {
         _unstakeDelay = newUnstakeDelay;
         emit UnstakeDelayChanged(newUnstakeDelay);
     }
