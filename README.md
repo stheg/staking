@@ -11,6 +11,14 @@ Now you are ready to use stake, unstake and claim functions!
 Also, in the tests and tasks uniswap contracts are used to provide liquidity and get LP-token.
 
 Steps to deploy & test [you can change 'localhost' to 'rinkeby' to perform all tasks in the rinkeby]:
+0. compile the contract & uncomment [import tasks] in hardhat.config.ts
+```
+    0. 1. npx hardhat compile
+    0. 2. // uncomment the next lines in hardhat.config.ts:
+//UNCOMMENT AFTER COMPILATION:
+//import "./tasks/staking";
+//import "./tasks/task-helper";
+``` 
 1. use [deploy-token] task to deploy 2 MAERC20 tokens: A and B
 ```
     1. 1. npx hardhat deploy-token -n A -v 10000 --network localhost // => TOKEN_A_ADDR

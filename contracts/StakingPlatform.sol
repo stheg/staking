@@ -51,12 +51,6 @@ contract StakingPlatform {
         _owner = msg.sender;
     }
 
-    // constructor(address stakingToken, address rewardToken) {
-    //     _stakingToken = IERC20(stakingToken);
-    //     _rewardToken = IERC20(rewardToken);
-    //     _owner = msg.sender;
-    // }
-
     /// @notice Returns current Reward Percentage
     function getRewardPercentage() external view returns(uint256) {
         return _rewardPercentage;

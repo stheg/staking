@@ -9,8 +9,10 @@ import "solidity-coverage";
 import "tsconfig-paths/register";
 
 import "./tasks/default";
-import "./tasks/staking";
-import "./tasks/task-helper";
+
+//UNCOMMENT AFTER COMPILATION:
+//import "./tasks/staking";
+//import "./tasks/task-helper";
 
 export default {
   solidity: {
