@@ -5,7 +5,7 @@ import { ethers } from "hardhat";
 import { delay, toDate } from "../scripts/misc";
 import { provideLiquidityForTests } from "../scripts/provide-liquidity";
 import { IERC20, StakingPlatform } from "../typechain-types";
-import { testDeployment } from "./test-deployment";
+import { testDeployment } from "../scripts/test-deployment";
 
 describe("stake", () => {
     let accounts: SignerWithAddress[];

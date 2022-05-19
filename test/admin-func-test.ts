@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { provideLiquidityForTests } from "../scripts/provide-liquidity";
 import { IERC20, StakingPlatform } from "../typechain-types";
-import { testDeployment } from "./test-deployment";
+import { testDeployment } from "../scripts/test-deployment";
 
 describe("lock-unlock functions", () => {
     let accounts: SignerWithAddress[];

@@ -9,6 +9,8 @@ import "solidity-coverage";
 import "tsconfig-paths/register";
 
 import "./tasks/default";
+import "./tasks/staking";
+//import "./tasks/task-helper";
 
 export default {
   solidity: {
@@ -25,7 +27,7 @@ export default {
       forking: {
         url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALC_KEY}`,
         blockNumber: 10691345
-      }
+      },
     }
   },
   etherscan: {
