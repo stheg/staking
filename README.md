@@ -36,7 +36,9 @@ Steps to deploy & test [you can change 'localhost' to 'rinkeby' to perform all t
     6. 2. npx hardhat stake --contract STAKING_PLATFORM --value 1000 --network localhost // => it will stake 1000 units
 ```
 7. Wait 20 minutes (by default) to be able to use [unstake] task
+```
     7. 1. npx hardhat unstake --contract STAKING_PLATFORM --network localhost // => it will transfer your staked tokens back to you
+```
 8. By default the reward period is 10 minutes, so now you should be able to use [claim] task. For now, for test local node, the task automatically mints some amount of TOKEN_B (it is the reward token, you rememeber, yes?:)) for the staking platform.
 ```
     8. 1. npx hardhat claim --contract STAKING_PLATFORM --network localhost
