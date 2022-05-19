@@ -60,5 +60,19 @@ task("claim", "Allows to withdraw available reward tokens")
             staker
         ) as StakingPlatform;
 
+        const erc20Addr = await stakingPlatform.getRewardToken();
+        const rewardToken = await hre.ethers.getContractAt(
+            "IERC20",
+            erc20Addr,
+            staker
+        ) as IERC20;
+
+        // just for test
+        await rewardToken.connect(ercOwner)
+            .mint(stakingPlatform.address, 5000);
+
         await stakingPlatform.claim();
+
+        const res = await rewardToken.balanceOf(staker.address);
+        console.log("Current amount of reward tokens: " + res);
     });

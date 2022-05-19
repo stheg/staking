@@ -10,13 +10,13 @@ export async function testDeployment(
 ):Promise<StakingPlatform> {
     const contractFactory = 
         await ethers.getContractFactory("StakingPlatform", owner);
-    const contract = await contractFactory.deploy(
-        tokenToStake.address, 
-        rewardToken.address
-    ) as StakingPlatform;
+    const contract = await contractFactory.deploy() as StakingPlatform;
     
     await contract.deployed();
-
+    await contract.setStakingToken(tokenToStake.address);
+    await contract.setRewardToken(rewardToken.address);
+    await contract.setLock(false);
+    
     return contract;
 }
 

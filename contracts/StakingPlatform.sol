@@ -26,7 +26,7 @@ contract StakingPlatform {
     uint32 private _rewardDelay = 10 minutes;
     uint32 private _unstakeDelay = 20 minutes;
     uint8 private _rewardPercentage = 20;
-    bool private _isLocked = false;
+    bool private _isLocked = true;
     address private _owner;
     IERC20 private _stakingToken;
     IERC20 private _rewardToken;
@@ -47,11 +47,15 @@ contract StakingPlatform {
         _;
     }
 
-    constructor(address stakingToken, address rewardToken) {
-        _stakingToken = IERC20(stakingToken);
-        _rewardToken = IERC20(rewardToken);
+    constructor() {
         _owner = msg.sender;
     }
+
+    // constructor(address stakingToken, address rewardToken) {
+    //     _stakingToken = IERC20(stakingToken);
+    //     _rewardToken = IERC20(rewardToken);
+    //     _owner = msg.sender;
+    // }
 
     /// @notice Returns current Reward Percentage
     function getRewardPercentage() external view returns(uint256) {

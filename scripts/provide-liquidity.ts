@@ -1,8 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { BigNumber } from "ethers";
-import { ethers } from "hardhat";
 import { deployMAERC20 } from "./test-deployment";
 import { IERC20, IUniswapV2Router02, IUniswapV2Factory } from "../typechain-types";
+import { ethers } from "hardhat";
 
 //const uniswapRouter = require("../node_modules/@uniswap/v2-periphery/build/IUniswapV2Router02.json");
 //const uniswapFactory = require("../node_modules/@uniswap/v2-core/build/IUniswapV2Factory.json");

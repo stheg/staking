@@ -10,7 +10,7 @@ import "tsconfig-paths/register";
 
 import "./tasks/default";
 import "./tasks/staking";
-//import "./tasks/task-helper";
+import "./tasks/task-helper";
 
 export default {
   solidity: {
