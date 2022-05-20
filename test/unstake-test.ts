@@ -130,4 +130,30 @@ describe("unstake", () => {
             await contract.getDetails(staker.address);
         expect(toDate(lastRewardDate2)).greaterThan(toDate(lastRewardDate1));
     });
+
+    it("should accumulate rewards", async () => {
+        const rewardPercentage = await contract.getRewardPercentage();
+        const rewardDelay = await contract.getRewardDelay();
+        const unstakeDelay = await contract.getUnstakeDelay();
+        const periods = Math.floor(
+            unstakeDelay.toNumber() / rewardDelay.toNumber()
+        );
+        const oneThird = Math.floor(availableLpTokenBalance.toNumber() / 3);
+        await stakingToken.approve(contract.address, 3 * oneThird);
+
+        //stake #1
+        await contract.stake(oneThird);
+        await delay(rewardDelay, 30);
+        //stake #2 should calculate reward
+        await contract.stake(oneThird);
+        let [, actualReward, ,] = await contract.getDetails(staker.address);
+        let expectedReward = actualReward.toNumber() +
+            Math.floor(2*oneThird * periods * rewardPercentage.toNumber() / 100);
+        
+        await delay(unstakeDelay, 30);
+        //stake #3 should calculate again and increase prev amount
+        await contract.unstake();
+        [, actualReward, ,] = await contract.getDetails(staker.address);
+        expect(actualReward.toNumber()).eq(expectedReward);
+    });
 });

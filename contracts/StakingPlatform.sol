@@ -137,17 +137,16 @@ contract StakingPlatform {
     /// @notice Transfers from the sender the specified amount of tokens, 
     /// which should be already approved by the sender
     function stake(uint256 amount) public whenUnlocked {
-        Stake memory staking = _stakes[msg.sender];
-
+        Stake storage staking = _stakes[msg.sender];
         uint256 calculatedReward = _calculateCurrentReward(
             staking.amount, 
             _getRewardPeriodsNumber(staking.lastRewardDate)
         );
 
-        _stakes[msg.sender].reward = staking.reward + calculatedReward;
-        _stakes[msg.sender].lastRewardDate = block.timestamp;
-        _stakes[msg.sender].lastStakeDate = block.timestamp;
-        _stakes[msg.sender].amount += amount;
+        staking.lastRewardDate = block.timestamp;
+        staking.lastStakeDate = block.timestamp;
+        staking.reward += calculatedReward;
+        staking.amount += amount;
         
         _stakingToken.transferFrom(msg.sender, address(this), amount);
     }
@@ -156,20 +155,20 @@ contract StakingPlatform {
     /// @notice Calculates reward based on currently staked amount.
     /// @notice Resets staked amount and transfers it back to the owner 
     function unstake() public whenUnlocked {
-        Stake memory staking = _stakes[msg.sender];
+        Stake storage staking = _stakes[msg.sender];
         require(
             staking.amount > 0 &&
             block.timestamp > staking.lastStakeDate + _unstakeDelay,
             "Cannot unstake yet"
         );
         uint256 stakedAmount = staking.amount;
-        _stakes[msg.sender].amount = 0;
+        staking.amount = 0;
 
         uint256 periods = _getRewardPeriodsNumber(staking.lastRewardDate);
-        uint256 reward = _calculateCurrentReward(stakedAmount, periods);
+        uint256 calculatedReward = _calculateCurrentReward(stakedAmount, periods);
         
-        _stakes[msg.sender].reward = reward;
-        _stakes[msg.sender].lastRewardDate =
+        staking.reward += calculatedReward;
+        staking.lastRewardDate =
             staking.lastRewardDate + periods * _rewardDelay;
         
         _stakingToken.transfer(msg.sender, stakedAmount);
@@ -178,7 +177,7 @@ contract StakingPlatform {
     /// @notice Checks if it is possible to calculate a reward.
     /// @notice Calculates and transfer calculated amount of reward tokens
     function claim() public whenUnlocked {
-        Stake memory staking = _stakes[msg.sender];
+        Stake storage staking = _stakes[msg.sender];
         bool canBeClaimed = staking.lastRewardDate > 0 &&
             block.timestamp > staking.lastRewardDate + _rewardDelay;
         require(canBeClaimed || staking.reward > 0, "Nothing to claim yet");
@@ -186,8 +185,8 @@ contract StakingPlatform {
         uint256 totalReward = staking.reward;
         uint256 periods = _getRewardPeriodsNumber(staking.lastRewardDate);
 
-        _stakes[msg.sender].reward = 0;
-        _stakes[msg.sender].lastRewardDate =
+        staking.reward = 0;
+        staking.lastRewardDate =
             staking.lastRewardDate + periods * _rewardDelay;
         
         totalReward += _calculateCurrentReward(staking.amount, periods);
