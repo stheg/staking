@@ -51,7 +51,9 @@ task("provide-liquidity", "Add tokens to a pool and get LP tokens back")
             provider
         ) as IUniswapV2Router02;
 
-        const deadline = Math.floor(new Date().getTime() / 1000) + 30;//+30 sec
+        const blockNumBefore = await hre.ethers.provider.getBlockNumber();
+        const blockBefore = await hre.ethers.provider.getBlock(blockNumBefore);
+        const deadline = blockBefore.timestamp + 30;//+30 sec
 
         await tokenA.connect(provider).approve(router.address, amountA);
         await tokenB.connect(provider).approve(router.address, amountB);

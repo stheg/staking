@@ -3,9 +3,6 @@ import { deployMAERC20 } from "./test-deployment";
 import { IERC20, IUniswapV2Router02, IUniswapV2Factory } from "../typechain-types";
 import { ethers } from "hardhat";
 
-//const uniswapRouter = require("../node_modules/@uniswap/v2-periphery/build/IUniswapV2Router02.json");
-//const uniswapFactory = require("../node_modules/@uniswap/v2-core/build/IUniswapV2Factory.json");
-
 export async function getFactory(
     signer:SignerWithAddress, 
     atAddress:string | undefined = undefined
@@ -62,7 +59,9 @@ export async function provideLiquidity(
     uniFactory: IUniswapV2Factory,
     uniRouter: IUniswapV2Router02
 ):Promise<IERC20> {
-    const deadline = Math.floor(new Date().getTime() / 1000) + 30;//+30 sec
+    const blockNumBefore = await ethers.provider.getBlockNumber();
+    const blockBefore = await ethers.provider.getBlock(blockNumBefore);
+    const deadline = blockBefore.timestamp + 30;//+30 sec
 
     await tokenA.connect(provider).approve(uniRouter.address, amountA);
     await tokenB.connect(provider).approve(uniRouter.address, amountB);
