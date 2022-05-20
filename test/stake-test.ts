@@ -4,7 +4,7 @@ import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 import { delay, toDate } from "../scripts/misc";
 import { provideLiquidityForTests } from "../scripts/provide-liquidity";
-import { IERC20, StakingPlatform } from "../typechain-types";
+import { IMintableERC20, IUniswapV2Pair, StakingPlatform } from "../typechain-types";
 import { testDeployment } from "../scripts/test-deployment";
 
 describe("stake", () => {
@@ -13,8 +13,8 @@ describe("stake", () => {
     let rewardTokenOwner: SignerWithAddress;
     let staker: SignerWithAddress;
     let contract: StakingPlatform;
-    let stakingToken: IERC20;
-    let rewardToken: IERC20;
+    let stakingToken: IUniswapV2Pair;
+    let rewardToken: IMintableERC20;
     let availableLpTokenBalance: BigNumber;
 
     beforeEach(async () => {
@@ -28,7 +28,11 @@ describe("stake", () => {
 
         availableLpTokenBalance = await stakingToken.balanceOf(staker.address);
         
-        contract = await testDeployment(stakingToken, rewardToken, owner);
+        contract = await testDeployment(
+            stakingToken.address, 
+            rewardToken.address, 
+            owner
+        );
         contract = contract.connect(staker);
 
         await rewardToken.connect(rewardTokenOwner)

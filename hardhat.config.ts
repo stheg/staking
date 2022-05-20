@@ -11,8 +11,8 @@ import "tsconfig-paths/register";
 import "./tasks/default";
 
 //UNCOMMENT AFTER COMPILATION:
-//import "./tasks/staking";
-//import "./tasks/task-helper";
+import "./tasks/staking";
+import "./tasks/task-helper";
 
 export default {
   solidity: {

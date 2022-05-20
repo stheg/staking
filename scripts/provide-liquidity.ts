@@ -1,6 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { deployMAERC20 } from "./test-deployment";
-import { IERC20, IUniswapV2Router02, IUniswapV2Factory } from "../typechain-types";
+import { IERC20, IUniswapV2Pair, IUniswapV2Router02, IUniswapV2Factory, IMintableERC20 } from "../typechain-types";
 import { ethers } from "hardhat";
 
 export async function getFactory(
@@ -28,7 +28,7 @@ export async function getRouter(
 export async function provideLiquidityForTests(
     provider: SignerWithAddress,
     rewardTokenOwner: SignerWithAddress
-):Promise<[IERC20, IERC20]> {
+): Promise<[IUniswapV2Pair, IMintableERC20]> {
     const rewardToken = await deployMAERC20("RWD", rewardTokenOwner);
     await rewardToken.mint(provider.address, 50000);
     
@@ -58,17 +58,13 @@ export async function provideLiquidity(
     amountB:number,
     uniFactory: IUniswapV2Factory,
     uniRouter: IUniswapV2Router02
-):Promise<IERC20> {
+): Promise<IUniswapV2Pair> {
     const blockNumBefore = await ethers.provider.getBlockNumber();
     const blockBefore = await ethers.provider.getBlock(blockNumBefore);
     const deadline = blockBefore.timestamp + 30;//+30 sec
 
     await tokenA.connect(provider).approve(uniRouter.address, amountA);
     await tokenB.connect(provider).approve(uniRouter.address, amountB);
-
-    let lpToken = await uniFactory.getPair(tokenA.address, tokenB.address);
-    if (lpToken == ethers.constants.AddressZero)
-        await uniFactory.createPair(tokenA.address, tokenB.address);
 
     await uniRouter.addLiquidity(
         tokenA.address,
@@ -81,12 +77,12 @@ export async function provideLiquidity(
         deadline
     );
 
-    lpToken = await uniFactory.getPair(tokenA.address, tokenB.address);
-    const stakingToken = await ethers.getContractAt(
-        "IERC20",
-        lpToken,
+    let lpTokenAddr = await uniFactory.getPair(tokenA.address, tokenB.address);
+    const lpToken = await ethers.getContractAt(
+        "IUniswapV2Pair",
+        lpTokenAddr,
         provider
-    ) as IERC20;
+    ) as IUniswapV2Pair;
 
-    return stakingToken;
+    return lpToken;
 }

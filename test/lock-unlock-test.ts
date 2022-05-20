@@ -2,7 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { provideLiquidityForTests } from "../scripts/provide-liquidity";
-import { IERC20, StakingPlatform } from "../typechain-types";
+import { IMintableERC20, IUniswapV2Pair, StakingPlatform } from "../typechain-types";
 import { testDeployment } from "../scripts/test-deployment";
 
 describe("lock-unlock functions", () => {
@@ -11,8 +11,8 @@ describe("lock-unlock functions", () => {
     let rewardTokenOwner: SignerWithAddress;
     let staker: SignerWithAddress;
     let contract: StakingPlatform;
-    let stakingToken: IERC20;
-    let rewardToken: IERC20;
+    let stakingToken: IUniswapV2Pair;
+    let rewardToken: IMintableERC20;
 
     beforeEach(async () => {
         accounts = await ethers.getSigners();
@@ -23,7 +23,11 @@ describe("lock-unlock functions", () => {
         [stakingToken, rewardToken] =
             await provideLiquidityForTests(staker, rewardTokenOwner);
 
-        contract = await testDeployment(stakingToken, rewardToken, owner);
+        contract = await testDeployment(
+            stakingToken.address, 
+            rewardToken.address, 
+            owner
+        );
         contract = contract.connect(staker);
     });
 

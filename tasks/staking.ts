@@ -1,5 +1,5 @@
 import { task } from "hardhat/config";
-import { IERC20, StakingPlatform } from "../typechain-types";
+import { IERC20, IMintableERC20, StakingPlatform } from "../typechain-types";
 
 task("stake", "Allows to stake some amount of tokens")
     .addParam("contract", "address of the staking platform")
@@ -23,8 +23,9 @@ task("stake", "Allows to stake some amount of tokens")
             staker
         ) as IERC20;
         
-        let amount = args.amount ?? await stakingToken.balanceOf(staker.address);
-        console.log("Amount: " + amount);
+        let amount = args.value ? hre.ethers.BigNumber.from(args.value) 
+            : await stakingToken.balanceOf(staker.address);
+        
         await stakingToken.approve(stakingPlatform.address, amount);
         await stakingPlatform.stake(amount);
     });
@@ -62,10 +63,10 @@ task("claim", "Allows to withdraw available reward tokens")
 
         const erc20Addr = await stakingPlatform.getRewardToken();
         const rewardToken = await hre.ethers.getContractAt(
-            "IERC20",
+            "IMintableERC20",
             erc20Addr,
             staker
-        ) as IERC20;
+        ) as IMintableERC20;
 
         // just for test
         await rewardToken.connect(ercOwner)
