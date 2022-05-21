@@ -22,6 +22,13 @@ contract StakingPlatform {
     /// @notice Informs that unstake delay is changed
     event UnstakeDelayChanged(uint32 indexed unstakeDelay);
 
+    /// @notice Informs that a staking or a reward token is changed
+    event TokenChanged(
+        bool indexed isRewardToken, 
+        address indexed oldValue, 
+        address indexed newValue
+    );
+
     //uint32 covers 136 years, it's more than enough for delays
     uint32 private _rewardDelay = 10 minutes;
     uint32 private _unstakeDelay = 20 minutes;
@@ -120,6 +127,7 @@ contract StakingPlatform {
         onlyOwner 
         whenLocked 
     {
+        emit TokenChanged(true, address(_rewardToken), newRewardToken);
         _rewardToken = IERC20(newRewardToken);
     }
 
@@ -129,6 +137,7 @@ contract StakingPlatform {
         onlyOwner 
         whenLocked 
     {
+        emit TokenChanged(false, address(_stakingToken), newStakingToken);
         _stakingToken = IERC20(newStakingToken);
     }
 

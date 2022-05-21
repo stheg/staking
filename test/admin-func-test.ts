@@ -115,4 +115,20 @@ describe("lock-unlock functions", () => {
             .withArgs(newOne);
     });
 
+    it("setStakingToken should emit event", async () => {
+        await contract.connect(owner).setLock(true);
+        const oldStakingToken = await contract.getStakingToken();
+        const tx = contract.connect(owner).setStakingToken(rewardToken.address);
+        await expect(tx).to.emit(contract, "TokenChanged")
+            .withArgs(false, oldStakingToken, rewardToken.address);
+    });
+
+    it("setRewardToken should emit event", async () => {
+        await contract.connect(owner).setLock(true);
+        const oldRewardToken = await contract.getRewardToken();
+        const tx = contract.connect(owner).setRewardToken(stakingToken.address);
+        await expect(tx).to.emit(contract, "TokenChanged")
+            .withArgs(true, oldRewardToken, stakingToken.address);
+    });
+
 });
